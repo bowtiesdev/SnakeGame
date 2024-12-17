@@ -1,136 +1,204 @@
 import pygame
-import time
+import sys
 import random
 
-# Pygame'i başlat
+# pygame başlatma
 pygame.init()
 
-# Renkler
-beyaz = (255, 255, 255)
-siyah = (0, 0, 0)
-kirmizi = (213, 50, 80)
-yesil = (0, 255, 0)
-mavi = (50, 153, 213)
+# Ekran boyutları
+screen_width = 800
+screen_height = 600
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Yılan Oyunu")
 
-# Ekran boyutu
-genislik = 600
-yukseklik = 400
+# Yılanın başlangıç parametreleri
+snake_pos = [100, 50]
+snake_body = [[100, 50], [90, 50], [80, 50]]
 
-# Pencereyi oluştur
-displey = pygame.display.set_mode((genislik, yukseklik))
-pygame.display.set_caption('Yılan Oyunu')
-
-# Saat (FPS kontrolü için)
-clock = pygame.time.Clock()
+# Yılanın hareket yönü
+direction = 'RIGHT'
+change_to = direction
 
 # Yılanın hızı
-yilan_hizi = 15
+speed = 10
 
-# Yılanın boyutları
-yilan_boyut = 10
+# Renkler
+black = (0, 0, 0)
+green = (0, 255, 0)
+red = (255, 0, 0)
+white = (255, 255, 255)
+blue = (0, 0, 255)
+gray = (169, 169, 169)
 
-# Yazı fontu
-font_style = pygame.font.SysFont("bahnschrift", 25)
-score_font = pygame.font.SysFont("comicsansms", 35)
+# Yiyecek (food) başlangıç parametreleri
+food_pos = [random.randrange(1, (screen_width//10)) * 10, random.randrange(1, (screen_height//10)) * 10]
+food_spawn = True
 
-# Skoru gösteren fonksiyon
-def skor_goster(skor):
-    value = score_font.render("Skor: " + str(skor), True, siyah)
-    displey.blit(value, [0, 0])
+# Puan
+score = 0
 
-# Yılanı çizme fonksiyonu
-def yilan_ciz(yilan_boyut, yilan_listesi):
-    for x in yilan_listesi:
-        pygame.draw.rect(displey, yesil, [x[0], x[1], yilan_boyut, yilan_boyut])
+# Engeller
+obstacles = []
 
-# Mesaj gösterme fonksiyonu
-def mesaj_goster(msg, color):
-    mesaj = font_style.render(msg, True, color)
-    displey.blit(mesaj, [genislik / 6, yukseklik / 3])
+# Oyun saati
+clock = pygame.time.Clock()
 
-# Ana oyun döngüsü
+# Engelleri oluşturma fonksiyonu
+def create_obstacles():
+    global obstacles
+    obstacle_length = random.randint(5, 15)  # Engelin uzunluğu 3 ile 7 arasında
+    orientation = random.choice(['horizontal', 'vertical', 'L'])  # Engel yatay, dikey veya L şeklinde olabilir
+
+    # Engel başlangıç pozisyonu
+    start_x = random.randrange(1, (screen_width // 10)) * 10
+    start_y = random.randrange(1, (screen_height // 10)) * 10
+
+    new_obstacle = []
+
+    if orientation == 'horizontal':
+        for i in range(obstacle_length):
+            new_obstacle.append([start_x + i * 10, start_y])
+    elif orientation == 'vertical':
+        for i in range(obstacle_length):
+            new_obstacle.append([start_x, start_y + i * 10])
+    elif orientation == 'L':
+        for i in range(obstacle_length):
+            if i < obstacle_length // 2:
+                new_obstacle.append([start_x + i * 10, start_y])  # Yatay kısmı
+            else:
+                new_obstacle.append([start_x + (obstacle_length // 2) * 10, start_y + (i - obstacle_length // 2) * 10])  # Dikey kısmı
+
+    obstacles.append(new_obstacle)
+
+# Yılanın hareketini kontrol eden fonksiyon
 def oyun():
-    oyun_bitti = False
-    oyun_bitti_mi = False
+    global direction, change_to, snake_pos, snake_body, food_pos, food_spawn, score, obstacles
 
-    x1 = genislik / 2
-    y1 = yukseklik / 2
-
-    x1_degisiklik = 0
-    y1_degisiklik = 0
-
-    yilan_listesi = []
-    uzunluk = 1
-
-    # Yiyecek yerini rastgele oluştur
-    yemekx = round(random.randrange(0, genislik - yilan_boyut) / 10.0) * 10.0
-    yemeki = round(random.randrange(0, yukseklik - yilan_boyut) / 10.0) * 10.0
-
-    while not oyun_bitti:
-
-        while oyun_bitti_mi:
-            displey.fill(mavi)
-            mesaj_goster("Oyunu Kaybettiniz! Q-Quit veya C-Yeni Oyun", kirmizi)
-            skor_goster(uzunluk - 1)
-            pygame.display.update()
-
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_q:
-                        oyun_bitti = True
-                        oyun_bitti_mi = False
-                    if event.key == pygame.K_c:
-                        oyun()
-
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                oyun_bitti = True
-            if event.type == pygame.KEYDOWN:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    change_to = 'UP'
+                if event.key == pygame.K_DOWN:
+                    change_to = 'DOWN'
                 if event.key == pygame.K_LEFT:
-                    x1_degisiklik = -yilan_boyut
-                    y1_degisiklik = 0
-                elif event.key == pygame.K_RIGHT:
-                    x1_degisiklik = yilan_boyut
-                    y1_degisiklik = 0
-                elif event.key == pygame.K_UP:
-                    y1_degisiklik = -yilan_boyut
-                    x1_degisiklik = 0
-                elif event.key == pygame.K_DOWN:
-                    y1_degisiklik = yilan_boyut
-                    x1_degisiklik = 0
+                    change_to = 'LEFT'
+                if event.key == pygame.K_RIGHT:
+                    change_to = 'RIGHT'
 
-        if x1 >= genislik or x1 < 0 or y1 >= yukseklik or y1 < 0:
-            oyun_bitti_mi = True
-        x1 += x1_degisiklik
-        y1 += y1_degisiklik
-        displey.fill(mavi)
-        pygame.draw.rect(displey, siyah, [yemekx, yemeki, yilan_boyut, yilan_boyut])
-        yilan_head = []
-        yilan_head.append(x1)
-        yilan_head.append(y1)
-        yilan_listesi.append(yilan_head)
-        if len(yilan_listesi) > uzunluk:
-            del yilan_listesi[0]
+        # Yılanın yönünü kontrol et
+        if change_to == 'UP' and direction != 'DOWN':
+            direction = 'UP'
+        if change_to == 'DOWN' and direction != 'UP':
+            direction = 'DOWN'
+        if change_to == 'LEFT' and direction != 'RIGHT':
+            direction = 'LEFT'
+        if change_to == 'RIGHT' and direction != 'LEFT':
+            direction = 'RIGHT'
 
-        for x in yilan_listesi[:-1]:
-            if x == yilan_head:
-                oyun_bitti_mi = True
+        # Yılanın başını hareket ettir
+        if direction == 'UP':
+            snake_pos[1] -= speed
+        if direction == 'DOWN':
+            snake_pos[1] += speed
+        if direction == 'LEFT':
+            snake_pos[0] -= speed
+        if direction == 'RIGHT':
+            snake_pos[0] += speed
 
-        yilan_ciz(yilan_boyut, yilan_listesi)
-        skor_goster(uzunluk - 1)
+        # Yılanın vücudunu hareket ettir
+        snake_body.insert(0, list(snake_pos))
+        if snake_pos == food_pos:
+            score += 10
+            food_spawn = False  # Yılan yediği zaman yeni yemek doğurulacak
+        else:
+            snake_body.pop()
 
+        # Yeni yemek doğurulması
+        if not food_spawn:
+            food_pos = [random.randrange(1, (screen_width//10)) * 10, random.randrange(1, (screen_height//10)) * 10]
+        food_spawn = True
+
+        # Engelleri oluştur
+        if score % 100 == 0 and len(obstacles) < (score // 100):  # Her 10 yemek yediğinde yeni engel ekle
+            create_obstacles()
+
+        # Ekranı temizle
+        screen.fill(black)
+
+        # Yılanın kenara çarpıp çarpmadığını kontrol et
+        if snake_pos[0] < 0 or snake_pos[0] >= screen_width or snake_pos[1] < 0 or snake_pos[1] >= screen_height:
+            game_over()
+
+        # Yılanın kendi gövdesine çarpıp çarpmadığını kontrol et
+        for block in snake_body[1:]:  # Yılanın başı hariç tüm gövdeyi kontrol et
+            if snake_pos == block:
+                game_over()
+
+        # Yılanı çiz
+        for block in snake_body:
+            pygame.draw.rect(screen, green, pygame.Rect(block[0], block[1], 10, 10))
+
+        # Yemeği çiz
+        pygame.draw.rect(screen, red, pygame.Rect(food_pos[0], food_pos[1], 10, 10))
+
+        # Engelleri çiz
+        for obstacle in obstacles:
+            for block in obstacle:
+                pygame.draw.rect(screen, gray, pygame.Rect(block[0], block[1], 10, 10))
+
+        # Puanı yazdır
+        font = pygame.font.SysFont('arial', 20)
+        score_text = font.render("Puan: " + str(score), True, white)
+        screen.blit(score_text, [0, 0])
+
+        # Ekranı güncelle
         pygame.display.update()
 
-        # Yılan yemek yediğinde
-        if x1 == yemekx and y1 == yemeki:
-            yemekx = round(random.randrange(0, genislik - yilan_boyut) / 10.0) * 10.0
-            yemeki = round(random.randrange(0, yukseklik - yilan_boyut) / 10.0) * 10.0
-            uzunluk += 1
+        # Oyun hızını ayarla
+        clock.tick(15)
 
-        clock.tick(yilan_hizi)
+# Oyun bittiğinde çağrılacak fonksiyon
 
-    pygame.quit()
-    quit()
+# Oyun bittiğinde çağrılacak fonksiyon
+def game_over():
+    font = pygame.font.SysFont('arial', 50)
+    game_over_text = font.render("Oyun Bitti! Q: Çıkış Y: Yeni Oyun", True, red)
+    screen.blit(game_over_text, [screen_width // 4, screen_height // 3])
+    pygame.display.update()
 
-# Oyunu başlat, first
-oyun()
+    # Kullanıcıdan yeni oyun veya çıkış seçeneği al
+    waiting_for_input = True
+    while waiting_for_input:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:  # Çıkış
+                    pygame.quit()
+                    sys.exit()
+                elif event.key == pygame.K_y:  # Yeni oyun başlat
+                    reset_game()
+                    waiting_for_input = False
+
+# Oyunu sıfırlama fonksiyonu
+def reset_game():
+    global snake_pos, snake_body, food_pos, food_spawn, score, obstacles, direction, change_to
+    # Yılanın başlangıç durumu
+    snake_pos = [100, 50]
+    snake_body = [[100, 50], [90, 50], [80, 50]]
+    direction = 'RIGHT'
+    change_to = direction
+    food_pos = [random.randrange(1, (screen_width//10)) * 10, random.randrange(1, (screen_height//10)) * 10]
+    food_spawn = True
+    score = 0
+    obstacles = []
+
+
+# Oyun başlatma
+if __name__ == "__main__":
+    oyun()
