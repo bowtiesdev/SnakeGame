@@ -132,5 +132,5 @@ def oyun():
     pygame.quit()
     quit()
 
-# Oyunu başlat
+# Oyunu başlat, first
 oyun()
