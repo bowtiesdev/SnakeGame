@@ -161,7 +161,6 @@ def oyun():
         # Oyun hızını ayarla
         clock.tick(15)
 
-# Oyun bittiğinde çağrılacak fonksiyon
 
 # Oyun bittiğinde çağrılacak fonksiyon
 def game_over():
