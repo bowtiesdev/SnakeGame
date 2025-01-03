@@ -78,7 +78,7 @@ Bu proje MIT lisansı altında lisanslanmıştır. Daha fazla bilgi için `LICEN
 
 ## 🤝 İletişim
 
-Bowtie - [@bowtiesdev](https://github.com/bowtiesdev)
+Bowties - [@bowtiesdev](https://github.com/bowtiesdev)
 
 Proje Linki: [https://github.com/bowtiesdev/SnakeGame](https://github.com/bowtiesdev/SnakeGame)
 
